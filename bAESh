@@ -286,13 +286,13 @@ AES_output_base64(){
   local -n array=$1
   local last=$2
 
-  for ((i = 0; i < $last; i++)); do
+  for ((i = 0; i < last; i++)); do
     if [ $AES_base64_index -eq 0 ]; then
       AES_base64_print "${AES_base64_table[${array[i]} >> 2]}"
-      AES_base64_left=$(( (${array[i]} & 3) << 4))
+      AES_base64_left=$(( (array[i] & 3) << 4))
     elif [ $AES_base64_index -eq 1 ]; then
       AES_base64_print "${AES_base64_table[$AES_base64_left + (${array[i]} >> 4)]}"
-      AES_base64_left=$(( (${array[i]} & 15) << 2 ))
+      AES_base64_left=$(( (array[i] & 15) << 2 ))
     elif [ $AES_base64_index -eq 2 ]; then
       AES_base64_print "${AES_base64_table[$AES_base64_left + (${array[i]} >> 6)]}"
       AES_base64_print "${AES_base64_table[${array[i]} & 63]}"
@@ -327,7 +327,7 @@ AES_do_xor(){
   local -n array1=$1
   local -n array2=$2
 
-  for ((i = 0; i < $AES_block_size; i++)); do
+  for ((i = 0; i < AES_block_size; i++)); do
     array1[i]=$(( array1[i] ^ array2[i] ))
   done
 }
@@ -422,7 +422,7 @@ AES_output_hex(){
 AES_print_expanded_key(){
   local i
 
-  for ((i = 0; i < $AES_rounds + 1; i++)); do
+  for ((i = 0; i < AES_rounds + 1; i++)); do
     printf '%02x' "${AES_round_keys[$i*$AES_block_size]}"
     printf ' %02x' "${AES_round_keys[@]:$i*$AES_block_size+1:$AES_block_size-1}"
     printf '\n'
@@ -452,17 +452,17 @@ AES_init(){
   key_length=$(( ${#hex_key} / 2 ))
 
   # if no explicit key bits given, derive them from the key length
-  if ( [ $key_length -lt 16 ] && [ $AES_key_bits -eq 0 ] ) || ( [ $key_length -ne 16 ] && [ $AES_key_bits -eq 128 ] ); then
+  if { [ $key_length -lt 16 ] && [ $AES_key_bits -eq 0 ]; } || { [ $key_length -ne 16 ] && [ $AES_key_bits -eq 128 ]; }; then
     # use 128 bits, expand key with zeros
     AES_log "Warning: forcing key length to 128 bits"
     hex_key="${hex_key}00000000000000000000000000000000"
     hex_key=${hex_key:0:32}
-  elif ( [ $key_length -gt 16 ] && [ $key_length -lt 24 ] && [ $AES_key_bits -eq 0 ] ) || ( [ $key_length -ne 24 ] && [ $AES_key_bits -eq 192 ] ); then
+  elif { [ $key_length -gt 16 ] && [ $key_length -lt 24 ] && [ $AES_key_bits -eq 0 ]; } || { [ $key_length -ne 24 ] && [ $AES_key_bits -eq 192 ]; }; then
     # use 192 bits, expand key with zeros
     AES_log "Warning: forcing key length to 192 bits"
     hex_key="${hex_key}000000000000000000000000000000000000000000000000"
     hex_key=${hex_key:0:48}
-  elif ( [ $key_length -gt 24 ] && [ $AES_key_bits -eq 0 ]) || ( [ $key_length -ne 32 ] && [ $AES_key_bits -eq 256 ] ); then
+  elif { [ $key_length -gt 24 ] && [ $AES_key_bits -eq 0 ]; } || { [ $key_length -ne 32 ] && [ $AES_key_bits -eq 256 ]; }; then
     # use 256 bits, expand key with zeros
     AES_log "Warning: forcing key length to 256 bits"
     hex_key="${hex_key}0000000000000000000000000000000000000000000000000000000000000000"
@@ -483,7 +483,7 @@ AES_init(){
     AES_expanded_key_bytes=240
   fi
 
-  AES_create_iv_or_key $hex_key AES_key
+  AES_create_iv_or_key "$hex_key" AES_key
 
   AES_expand_key
 
@@ -525,7 +525,7 @@ AES_encrypt_ecb(){
     fi
   done
 
-  if [ $AES_output_format = "base64" ]; then
+  if [ "$AES_output_format" = "base64" ]; then
     AES_output_base64_finalize   # this needs no args
   fi
 }
@@ -555,7 +555,7 @@ AES_decrypt_ecb(){
     ((cycle++))
   done
 
-  if [ $AES_output_format = "base64" ]; then
+  if [ "$AES_output_format" = "base64" ]; then
     AES_output_base64_finalize   # this needs no args
   fi
 
@@ -593,7 +593,7 @@ AES_encrypt_cbc(){
     fi
   done
 
-  if [ $AES_output_format = "base64" ]; then
+  if [ "$AES_output_format" = "base64" ]; then
     AES_output_base64_finalize   # this needs no args
   fi
 }
@@ -626,7 +626,7 @@ AES_decrypt_cbc(){
 
   done
 
-  if [ $AES_output_format = "base64" ]; then
+  if [ "$AES_output_format" = "base64" ]; then
     AES_output_base64_finalize   # this needs no args
   fi
 }
@@ -670,7 +670,7 @@ AES_encrypt_cfb(){
     fi
   done
 
-  if [ $AES_output_format = "base64" ]; then
+  if [ "$AES_output_format" = "base64" ]; then
     AES_output_base64_finalize   # this needs no args
   fi
 }
@@ -702,7 +702,7 @@ AES_decrypt_cfb(){
 
   done
 
-  if [ $AES_output_format = "base64" ]; then
+  if [ "$AES_output_format" = "base64" ]; then
     AES_output_base64_finalize   # this needs no args
   fi
 
@@ -750,7 +750,7 @@ AES_encrypt_ofb(){
 
   done
 
-  if [ $AES_output_format = "base64" ]; then
+  if [ "$AES_output_format" = "base64" ]; then
     AES_output_base64_finalize   # this needs no args
   fi
 }
@@ -767,7 +767,7 @@ AES_decrypt_ofb(){
 AES_increment_counter(){
   local i
 
-  for ((i = $AES_block_size - 1; i >= 0; i--)); do
+  for ((i = AES_block_size - 1; i >= 0; i--)); do
 
     ((AES_iv[i]++))
 
@@ -821,7 +821,7 @@ AES_encrypt_ctr(){
 
   done
 
-  if [ $AES_output_format = "base64" ]; then
+  if [ "$AES_output_format" = "base64" ]; then
     AES_output_base64_finalize   # this needs no args
   fi
 }
@@ -1001,8 +1001,8 @@ AES_add_round_key(){
 
   local i round=$1
 
-  for ((i = 0; i < $AES_block_size; i++)); do
-    AES_state[i]=$(( AES_state[i] ^ AES_round_keys[round * $AES_block_size + i] ))
+  for ((i = 0; i < AES_block_size; i++)); do
+    AES_state[i]=$(( AES_state[i] ^ AES_round_keys[round * AES_block_size + i] ))
   done
 
 }
@@ -1012,7 +1012,7 @@ AES_encrypt_block(){
   local round
   # state is in AES_state()
   AES_add_round_key 0
-  for ((round = 1; round <= $AES_rounds; round++)); do
+  for ((round = 1; round <= AES_rounds; round++)); do
     AES_sub_bytes
     AES_shift_rows
     if [ $round -lt $AES_rounds ]; then
@@ -1027,7 +1027,7 @@ AES_encrypt_block(){
 AES_decrypt_block(){
   local round
   AES_add_round_key $AES_rounds
-  for ((round = $AES_rounds - 1; round >= 0; round-- )); do
+  for ((round = AES_rounds - 1; round >= 0; round-- )); do
     AES_inv_shift_rows
     AES_inv_sub_bytes 
     AES_add_round_key $round
@@ -1046,7 +1046,7 @@ AES_expand_key(){
 
   # first $AES_key_bytes bytes of expansion is the key itself
 
-  for ((i = 0; i < $AES_key_bytes; i++ )); do
+  for ((i = 0; i < AES_key_bytes; i++ )); do
     AES_round_keys[i]=${AES_key[$i]}
   done
 
@@ -1202,7 +1202,6 @@ if [ "$AES_mode" != "ecb" ]; then
 
   # IV must always be 16 bytes
   iv_bits=$(( (${#hex_iv} / 2) * 8 ))
-  iv_bytes=$(( iv_bits / 8 ))
 
   if [ $iv_bits -ne 128 ]; then
     AES_log "Warning: forcing IV to 128 bits"
